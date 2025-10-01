@@ -1,0 +1,5 @@
+{
+  "name": "Sustainable Material Designer AI",
+  "description": "An AI-powered tool to design novel sustainable functional soft materials by providing functional requirements. Generates material descriptions and downloadable chemical structure files (.xyz) for use in computational chemistry software.",
+  "requestFramePermissions": []
+}
