@@ -1,209 +1,56 @@
 import React, { useState } from 'react';
 import type { UserRequirements } from '../types';
-import { BeakerIcon } from './icons/BeakerIcon';
-import { WandIcon } from './icons/WandIcon';
+import { DEFAULT_REQUIREMENTS } from '../types';
 
-interface InputFormProps {
-  onDesign: (requirements: UserRequirements) => void;
-  isLoading: boolean;
-}
+interface InputFormProps { onDesign: (requirements: UserRequirements) => void; isLoading: boolean; }
 
-const FormField: React.FC<{
-  id: keyof UserRequirements;
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  error?: string;
-}> = ({ id, label, placeholder, value, onChange, error }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-brand-primary mb-2">
-      {label}
-    </label>
-    <textarea
-      id={id}
-      name={id}
-      rows={3}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className={`w-full bg-brand-dark/50 border rounded-lg px-3 py-2 text-brand-light focus:ring-2 transition duration-200 ${
-        error 
-        ? 'border-red-500 ring-red-500' 
-        : 'border-brand-secondary focus:ring-brand-primary focus:border-brand-primary'
-      }`}
-      required={id === 'functionality' || id === 'useCase'}
-      aria-invalid={!!error}
-      aria-describedby={error ? `${id}-error` : undefined}
-    />
-    {error && <p id={`${id}-error`} className="mt-2 text-sm text-red-400 animate-fade-in">{error}</p>}
-  </div>
-);
-
-const SelectField: React.FC<{
-  id: keyof UserRequirements;
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: readonly string[];
-}> = ({ id, label, value, onChange, options }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-brand-primary mb-2">
-      {label}
-    </label>
-    <select
-      id={id}
-      name={id}
-      value={value}
-      onChange={onChange}
-      className="w-full bg-brand-dark/50 border border-brand-secondary rounded-lg px-3 py-2 text-brand-light focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition duration-200"
-    >
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  </div>
-);
-
-const CONDUCTIVITY_OPTIONS = ['Not Required', 'High', 'Medium', 'Low', 'Insulator'] as const;
-const ELASTICITY_OPTIONS = ['Not Required', 'High', 'Medium', 'Low', 'Rigid'] as const;
-const BIODEGRADABILITY_OPTIONS = ['Not Required', 'High', 'Medium', 'Low', 'Non-biodegradable'] as const;
+type TextField = { id: keyof UserRequirements; label: string; placeholder: string; required?: boolean };
+const fields: TextField[] = [
+  { id: 'functionality', label: 'Research functionality', placeholder: 'e.g., reversible adsorption of a charged organic pollutant', required: true },
+  { id: 'targetPollutant', label: 'Target pollutant or analyte', placeholder: 'Name, formula, charge state, and concentration range', required: true },
+  { id: 'waterMatrix', label: 'Water matrix', placeholder: 'e.g., synthetic freshwater, wastewater, seawater; include competing ions or organic matter' },
+  { id: 'operatingConditions', label: 'Operating conditions', placeholder: 'pH, temperature, dosage, contact time, ionic strength, and flow/batch mode' },
+  { id: 'compatibility', label: 'Compatibility and safety constraints', placeholder: 'Leaching, toxicity, regeneration, disposal, and material-stability constraints' },
+  { id: 'regulatoryCompliance', label: 'Regulatory or reporting needs', placeholder: 'Applicable jurisdiction, standard methods, or required performance benchmarks' },
+];
+const choices = {
+  conductivity: ['Not specified', 'High', 'Medium', 'Low', 'Insulator'],
+  elasticity: ['Not specified', 'High', 'Medium', 'Low', 'Rigid'],
+  biodegradability: ['Not specified', 'High', 'Medium', 'Low', 'Non-biodegradable'],
+} as const;
 
 export const InputForm: React.FC<InputFormProps> = ({ onDesign, isLoading }) => {
-  const [requirements, setRequirements] = useState<UserRequirements>({
-    functionality: '',
-    useCase: '',
-    compatibility: '',
-    environment: '',
-    conductivity: 'Not Required',
-    elasticity: 'Not Required',
-    biodegradability: 'Not Required',
-    regulatoryCompliance: '',
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof UserRequirements, string>>>({});
+  const [requirements, setRequirements] = useState<UserRequirements>(DEFAULT_REQUIREMENTS);
+  const [error, setError] = useState('');
 
-  const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof UserRequirements, string>> = {};
-    if (!requirements.functionality.trim()) {
-      newErrors.functionality = 'Material Functionality is a required field.';
-    }
-    if (!requirements.useCase.trim()) {
-      newErrors.useCase = 'Intended Use / Application is a required field.';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const update = (key: keyof UserRequirements, value: string) => setRequirements((current) => ({ ...current, [key]: value }));
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const missing = ['functionality', 'targetPollutant'].filter((key) => !requirements[key as keyof UserRequirements].trim());
+    if (missing.length) { setError('Research functionality and target pollutant are required.'); return; }
+    setError('');
+    onDesign(requirements);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setRequirements((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof UserRequirements]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name as keyof UserRequirements];
-        return newErrors;
-      });
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validate()) {
-      onDesign(requirements);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center gap-3">
-        <BeakerIcon className="w-8 h-8 text-brand-primary" />
-        <h2 className="text-2xl font-bold text-brand-primary tracking-wide">Define Your Material</h2>
-      </div>
-
-      <FormField
-        id="functionality"
-        label="Material Functionality*"
-        placeholder="e.g., Biodegradable polymer with high tensile strength and self-healing properties."
-        value={requirements.functionality}
-        onChange={handleChange}
-        error={errors.functionality}
-      />
-      <FormField
-        id="useCase"
-        label="Intended Use / Application*"
-        placeholder="e.g., Flexible electronics, smart textiles, or medical implants."
-        value={requirements.useCase}
-        onChange={handleChange}
-        error={errors.useCase}
-      />
-      <FormField
-        id="compatibility"
-        label="Compatibility Requirements"
-        placeholder="e.g., Must be non-toxic, biocompatible with human tissue, and soluble in water."
-        value={requirements.compatibility}
-        onChange={handleChange}
-      />
-      <FormField
-        id="environment"
-        label="Operating Environment"
-        placeholder="e.g., Stable in humid conditions, temperatures from -20°C to 80°C, and resistant to UV radiation."
-        value={requirements.environment}
-        onChange={handleChange}
-      />
-      
-      <div className="pt-4 border-t border-brand-secondary/50">
-         <h3 className="text-lg font-semibold text-brand-light mb-4">Specific Properties</h3>
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-           <SelectField
-            id="conductivity"
-            label="Conductivity"
-            value={requirements.conductivity}
-            onChange={handleChange}
-            options={CONDUCTIVITY_OPTIONS}
-           />
-           <SelectField
-            id="elasticity"
-            label="Elasticity"
-            value={requirements.elasticity}
-            onChange={handleChange}
-            options={ELASTICITY_OPTIONS}
-           />
-           <SelectField
-            id="biodegradability"
-            label="Biodegradability"
-            value={requirements.biodegradability}
-            onChange={handleChange}
-            options={BIODEGRADABILITY_OPTIONS}
-           />
-         </div>
-         <FormField
-            id="regulatoryCompliance"
-            label="Regulatory & Compliance Needs"
-            placeholder="e.g., FDA-approved for medical devices, RoHS compliant for electronics."
-            value={requirements.regulatoryCompliance}
-            onChange={handleChange}
-          />
-      </div>
-
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full flex items-center justify-center gap-3 bg-brand-primary hover:bg-teal-400 disabled:bg-gray-500 text-brand-dark font-bold py-3 px-4 rounded-lg shadow-lg transform hover:scale-105 transition duration-300 ease-in-out"
-      >
-        {isLoading ? (
-          <>
-            <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-            Designing...
-          </>
-        ) : (
-          <>
-            <WandIcon className="w-6 h-6" />
-            Design Material
-          </>
-        )}
-      </button>
-    </form>
-  );
+  return <form onSubmit={submit} className="space-y-5" noValidate>
+    <div className="rounded-lg border border-amber-500/40 bg-amber-950/30 p-4 text-sm text-amber-100">
+      This workspace creates **hypotheses only**. It does not validate chemistry, predict treatment performance, approve materials, or provide a synthesis protocol.
+    </div>
+    {fields.map((field) => <label key={field.id} className="block">
+      <span className="mb-2 block text-sm font-medium text-brand-primary">{field.label}{field.required ? ' *' : ''}</span>
+      <textarea rows={3} value={requirements[field.id]} onChange={(event) => update(field.id, event.target.value)} placeholder={field.placeholder} required={field.required} className="w-full rounded-lg border border-brand-secondary bg-brand-dark/60 px-3 py-2 text-brand-light outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/40" />
+    </label>)}
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      {(Object.keys(choices) as Array<keyof typeof choices>).map((key) => <label key={key} className="block">
+        <span className="mb-2 block text-sm font-medium capitalize text-brand-primary">{key}</span>
+        <select value={requirements[key]} onChange={(event) => update(key, event.target.value)} className="w-full rounded-lg border border-brand-secondary bg-brand-dark/60 px-3 py-2 text-brand-light">
+          {choices[key].map((option) => <option key={option}>{option}</option>)}
+        </select>
+      </label>)}
+    </div>
+    {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+    <button type="submit" disabled={isLoading} className="w-full rounded-lg bg-brand-primary px-4 py-3 font-bold text-brand-dark transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:bg-gray-500">
+      {isLoading ? 'Preparing hypothesis…' : 'Create hypothesis record'}
+    </button>
+  </form>;
 };

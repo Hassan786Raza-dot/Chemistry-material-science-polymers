@@ -1,102 +1,30 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import type { MaterialData } from '../types';
-import { DownloadIcon } from './icons/DownloadIcon';
-import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
-import { ClipboardIcon } from './icons/ClipboardIcon';
+import { VALIDATION_STATUS_LABELS } from '../types';
+import { validateXyz } from '../services/xyzValidation';
 import { MoleculeViewer } from './MoleculeViewer';
 
-interface OutputDisplayProps {
-  data: MaterialData;
-}
+export const OutputDisplay: React.FC<{ data: MaterialData }> = ({ data }) => {
+  const xyz = useMemo(() => validateXyz(data.xyzCoordinates), [data.xyzCoordinates]);
+  const download = () => {
+    if (!xyz.valid) return;
+    const safeName = data.materialName.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 80) || 'hypothesis';
+    const url = URL.createObjectURL(new Blob([data.xyzCoordinates], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a'); link.href = url; link.download = `${safeName}.xyz`; link.click(); URL.revokeObjectURL(url);
+  };
 
-const OutputSection: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
-    <div className="bg-brand-dark/50 p-4 rounded-lg border border-brand-secondary/50">
-        <div className="flex items-center gap-3 mb-3">
-            {icon}
-            <h4 className="text-lg font-semibold text-brand-light">{title}</h4>
-        </div>
-        <div className="prose prose-invert prose-sm max-w-none text-gray-300">
-            {children}
-        </div>
+  return <article className="w-full space-y-5" aria-live="polite">
+    <div className="rounded-lg border border-amber-500/60 bg-amber-950/40 p-4">
+      <strong className="block text-amber-200">{VALIDATION_STATUS_LABELS[data.validationStatus]}</strong>
+      <span className="mt-1 block text-sm text-amber-100">A generated record is not evidence of treatment performance, safety, novelty, or synthesis feasibility.</span>
     </div>
-);
-
-const validateXyz = (xyz: string): boolean => {
-    if (!xyz || typeof xyz !== 'string') return false;
-    const lines = xyz.trim().split('\n');
-    if (lines.length < 3) return false;
-
-    const atomCount = parseInt(lines[0], 10);
-    if (isNaN(atomCount) || atomCount <= 0) return false;
-
-    // Actual atoms start from line 2 (index)
-    if (lines.length - 2 !== atomCount) return false;
-
-    for (let i = 2; i < lines.length; i++) {
-      const parts = lines[i].trim().split(/\s+/);
-      if (parts.length !== 4) return false;
-      const [ , x, y, z] = parts;
-      if (isNaN(parseFloat(x)) || isNaN(parseFloat(y)) || isNaN(parseFloat(z))) {
-        return false;
-      }
-    }
-
-    return true;
-};
-
-
-export const OutputDisplay: React.FC<OutputDisplayProps> = ({ data }) => {
-  const isXyzValid = useMemo(() => validateXyz(data.xyzCoordinates), [data.xyzCoordinates]);
-
-  const handleDownload = useCallback(() => {
-    if (!isXyzValid) return; // Guard clause
-    const blob = new Blob([data.xyzCoordinates], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${data.materialName.replace(/\s+/g, '_') || 'material'}.xyz`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [data.materialName, data.xyzCoordinates, isXyzValid]);
-
-  return (
-    <div className="w-full space-y-6 animate-fade-in">
-      <div className="text-center">
-        <h3 className="text-3xl font-bold text-brand-primary">{data.materialName}</h3>
-        <p className="text-gray-300 mt-2 text-base whitespace-pre-wrap">{data.description}</p>
-      </div>
-
-      <OutputSection title="Synthesis Methodology" icon={<ClipboardIcon className="w-6 h-6 text-brand-primary" />}>
-        <p className="whitespace-pre-wrap">{data.synthesisMethodology}</p>
-      </OutputSection>
-
-      <OutputSection title="AI Validation Summary" icon={<ShieldCheckIcon className="w-6 h-6 text-brand-primary" />}>
-        <p className="whitespace-pre-wrap">{data.validationSummary}</p>
-      </OutputSection>
-      
-      <div>
-        <h4 className="text-lg font-semibold text-brand-light mb-2 text-center">Molecular Structure</h4>
-        <div className="bg-brand-dark p-4 rounded-md border border-brand-secondary aspect-square">
-            {isXyzValid ? (
-                <MoleculeViewer xyzData={data.xyzCoordinates} />
-            ) : (
-                <div className="flex items-center justify-center h-full text-red-400">
-                    <p>Invalid or malformed molecular structure data received.</p>
-                </div>
-            )}
-        </div>
-      </div>
-      
-      <button
-        onClick={handleDownload}
-        disabled={!isXyzValid}
-        className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition duration-300 ease-in-out"
-      >
-        <DownloadIcon className="w-5 h-5" />
-        Download .xyz File
-      </button>
-    </div>
-  );
+    <header>
+      <h3 className="text-3xl font-bold text-brand-primary">{data.materialName}</h3>
+      <p className="mt-2 whitespace-pre-wrap text-gray-300">{data.description}</p>
+    </header>
+    <section className="rounded-lg border border-brand-secondary/50 bg-brand-dark/50 p-4"><h4 className="mb-2 text-lg font-semibold">Rationale and boundaries</h4><p className="whitespace-pre-wrap text-gray-300">{data.validationSummary}</p></section>
+    <section className="rounded-lg border border-brand-secondary/50 bg-brand-dark/50 p-4"><h4 className="mb-2 text-lg font-semibold">What must happen before research use</h4><p className="whitespace-pre-wrap text-gray-300">{data.synthesisMethodology}</p><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-gray-300">{data.limitations.map((item) => <li key={item}>{item}</li>)}</ul></section>
+    <section><h4 className="mb-2 text-center text-lg font-semibold">Illustrative coordinate fragment</h4><div className="aspect-square rounded-md border border-brand-secondary bg-brand-dark p-4">{xyz.valid ? <MoleculeViewer xyzData={data.xyzCoordinates} /> : <div className="text-red-300">Invalid XYZ record: {xyz.errors.join(' ')}</div>}</div><button type="button" onClick={download} disabled={!xyz.valid} className="mt-3 w-full rounded-lg bg-green-700 px-4 py-2 font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-600">Download illustrative .xyz</button></section>
+    <footer className="rounded-lg border border-white/10 p-3 text-xs text-gray-400">Generator: {data.provenance.generator} · Template: {data.provenance.promptVersion} · Input hash: {data.provenance.inputHash} · Created: {data.provenance.createdAt}</footer>
+  </article>;
 };

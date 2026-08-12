@@ -10,9 +10,9 @@ export const Header: React.FC = () => {
           <AtomIcon className="w-10 h-10 text-brand-primary" />
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-brand-light tracking-wider">
-              Sustainable Material Designer
+              Research Hypothesis Workspace
             </h1>
-            <p className="text-xs text-gray-400">Powered by Computational Chemistry & AI</p>
+            <p className="text-xs text-gray-400">Transparent local records · validation required</p>
           </div>
         </div>
       </div>
