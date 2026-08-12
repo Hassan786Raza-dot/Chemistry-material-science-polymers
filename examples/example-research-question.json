@@ -1,0 +1,11 @@
+{
+  "functionality": "Reversible adsorption of a cationic organic pollutant with low expected leaching",
+  "targetPollutant": "Methylene blue, aqueous concentration range 1–50 mg/L",
+  "waterMatrix": "Synthetic freshwater with 10 mM NaCl; test separately in secondary wastewater",
+  "operatingConditions": "Batch screening at pH 6–8, 25 °C, adsorbent dosage 0.1–1.0 g/L, contact time 0–240 min",
+  "compatibility": "Measure polymer swelling, residual monomer release, regeneration performance, and mass balance",
+  "regulatoryCompliance": "Document analytical calibration, detection limits, blanks, and relevant local water-treatment requirements",
+  "conductivity": "Not specified",
+  "elasticity": "Medium",
+  "biodegradability": "Medium"
+}

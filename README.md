@@ -19,9 +19,10 @@ npm install
 npm run typecheck
 npm run build
 npm run test
+npm run example
 ```
 
-`npm run build` creates the production bundle in `dist/`. `npm run typecheck` runs the TypeScript compiler without emitting files. `npm run test` runs the deterministic validation tests.
+`npm run build` creates the production bundle in `dist/`. `npm run typecheck` runs the TypeScript compiler without emitting files. `npm run test` runs deterministic validation tests. `npm run example` executes the end-to-end example in `examples/` and writes a local JSON hypothesis record.
 
 ## Repository map
 
@@ -30,6 +31,11 @@ npm run test
 | `components/InputForm.tsx` | Captures explicit research context | User-entered requirements | Typed `UserRequirements` |
 | `services/materialGenerator.ts` | Creates a local hypothesis record | `UserRequirements` | `MaterialData` with limitations and provenance |
 | `services/xyzValidation.ts` | Strictly parses XYZ text | XYZ string | Parsed atoms and validation errors |
+| `services/researchValidation.ts` | Checks research-context completeness and contradictions | `UserRequirements` | Errors and visible warnings |
+| `examples/` | End-to-end smoke-test workflow | Example JSON question | Hypothesis JSON output |
+| `docs/USAGE.md` | Researcher usage and integration guidance | Commands and scope | Reproduction instructions |
+| `ROADMAP.md` | Staged future work | Known gaps | Near-, medium-, and long-term plan |
+| `OPEN_ISSUES.md` | Missing scientific inputs and blockers | Repository limitations | Required future evidence |
 | `components/MoleculeViewer.tsx` | Displays a 2D illustration | Validated XYZ fragment | Non-interpretive SVG illustration |
 | `components/OutputDisplay.tsx` | Displays status, limitations, and provenance | `MaterialData` | Reviewer-facing record and optional download |
 | `tests/` | Regression checks | Fixtures and pure functions | Pass/fail results |
@@ -39,6 +45,10 @@ npm run test
 Before using any output in a paper, record the Git commit, Node version, npm version, input text, input hash, generator version, and creation timestamp. Confirm that the output remains labeled as a hypothesis and that no sentence is presented as experimentally or computationally validated without supporting evidence.
 
 For an actual adsorption or materials study, do not add selective filtering in the user interface. Store every run, preserve raw files, define exclusion criteria before analysis, report independent replicates and uncertainty, and generate every figure from version-controlled scripts. A separate research-analysis package should include an environment lockfile, raw-data manifest, data dictionary, calibration records, and a release DOI.
+
+## Documentation
+
+See [`docs/USAGE.md`](docs/USAGE.md) for the complete example workflow. See [`ROADMAP.md`](ROADMAP.md) for staged future work and [`OPEN_ISSUES.md`](OPEN_ISSUES.md) for the missing scientific inputs required before adding research-analysis modules.
 
 ## Known limitations
 
